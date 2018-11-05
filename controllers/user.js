@@ -9,6 +9,7 @@ import {
 } from "../utils";
 import { sendHelloOnSlack } from "../utils/bot";
 import { _throw } from "../helpers";
+import badgeController from "./badge";
 
 export const updateParentUser = async interaction => {
   const score = calculateReceivedScore(interaction);
@@ -72,6 +73,7 @@ export const update = async interaction => {
             ? doc.reactions - 1
             : doc.reactions;
         doc.save();
+        badgeController.save(doc);
         return doc;
       });
     } else {

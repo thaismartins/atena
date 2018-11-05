@@ -10,6 +10,7 @@ import winston from "winston";
 import appRoutes from "./routes";
 require("./models/interaction");
 require("./models/user");
+require("./models/badge");
 
 const logger = winston.createLogger({
   level: "info",
