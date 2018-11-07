@@ -11,80 +11,32 @@ import { sendHelloOnSlack } from "../utils/bot";
 import { _throw } from "../helpers";
 
 export const updateParentUser = async interaction => {
-  const score = calculateReceivedScore(interaction);
-  const userInfo = await getUserInfo(interaction.parentUser);
-
-  if (userInfo.ok) {
-    const UserModel = mongoose.model("User");
-    const user = await UserModel.findOne({
-      slackId: interaction.parentUser
-    }).exec();
-
-    if (user) {
-      return UserModel.findOne(
-        { slackId: interaction.parentUser },
-        (err, doc) => {
-          if (err) {
-            throw new Error("Error updating parentUser");
-          }
-          const newScore = doc.score + score;
-          doc.level = calculateLevel(newScore);
-          doc.score = newScore < 0 ? 0 : newScore;
-          doc.save();
-          return doc;
-        }
-      );
-    } else {
-      throw new Error(`Error: parentUser does not exist `);
-    }
-  } else {
-    throw new Error(`Error: ${userInfo.error}`);
-  }
+  const UserModel = mongoose.model("User");
+  const user = await getAndUpdateUser(interaction, true);
+  const instance = new UserModel(user);
+  return instance.save();
 };
 
 export const update = async interaction => {
-  const score = calculateScore(interaction);
   const UserModel = mongoose.model("User");
-  const user = await UserModel.findOne({ slackId: interaction.user });
-
-  if (user) {
-    user.score += score;
-    user.level = calculateLevel(user.score);
-    user.isCoreTeam = isCoreTeam(interaction.user);
-    switch (interaction.type) {
-      case "message":
-        user.messages++;
-        break;
-      case "thread":
-        user.replies++;
-        break;
-      case "reaction_added":
-        user.reactions_info[0].send = user.reactions_info[0].send
-          ? user.reactions_info[0].send + 1
-          : 1;
-        break;
-    }
-    const instance = new UserModel(user);
-    return instance.save();
-  } else {
-    getUserInfo(interaction.user).then(userInfo => {
-      const newUser = {
-        avatar: userInfo.profile.image_72,
-        name: userInfo.profile.real_name,
-        level: 1,
-        score: score,
-        slackId: interaction.user,
-        messages: interaction.type === "message" ? 1 : 0,
-        replies: interaction.type === "thread" ? 1 : 0,
-        reactions: interaction.type === "reaction_added" ? 1 : 0,
-        lastUpdate: new Date(),
-        isCoreTeam: isCoreTeam(interaction.user)
-      };
-      const instance = new UserModel(newUser);
-      sendHelloOnSlack(interaction.user);
-      return instance.save();
-    });
+  const user = await getAndUpdateUser(interaction);
+  switch (interaction.type) {
+    case "message":
+      user.messages++;
+      break;
+    case "thread":
+      user.replies++;
+      break;
+    case "reaction_added":
+      user.reactions_info[0].send = user.reactions_info[0].send
+        ? user.reactions_info[0].send + 1
+        : 1;
+      break;
   }
+  console.log("chega aqui???????", user);
+
+  const instance = new UserModel(user);
+  return instance.save();
 };
 
 export const find = async (userId, isCoreTeam) => {
@@ -143,6 +95,35 @@ export const checkCoreTeam = async () => {
   ]);
 
   return UsersBulk;
+};
+
+const getAndUpdateUser = async (interaction, isParentuser = false) => {
+  const UserModel = mongoose.model("User");
+  const theUser = isParentuser ? interaction.parentUser : interaction.user;
+  const user = await UserModel.findOne({ slackId: theUser });
+  if (user) {
+    user.score += isParentuser ? calculateReceivedScore(interaction) : calculateScore(interaction);
+    user.level = calculateLevel(user.score);
+    user.isCoreTeam = isCoreTeam(interaction.user);
+    return user;
+  } else {
+    getUserInfo(theUser).then(userInfo => {
+      const newUser = {
+        avatar: userInfo.profile.image_72,
+        name: userInfo.profile.real_name,
+        level: 1,
+        score: isParentuser ? calculateReceivedScore(interaction) : calculateScore(interaction),
+        slackId: theUser,
+        messages: interaction.type === "message" ? 1 : 0,
+        replies: interaction.type === "thread" ? 1 : 0,
+        reactions: interaction.type === "reaction_added" ? 1 : 0,
+        lastUpdate: new Date(),
+        isCoreTeam: isCoreTeam(theUser)
+      };
+      sendHelloOnSlack(theUser);
+      return newUser;
+    });
+  }
 };
 
 export default {

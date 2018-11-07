@@ -86,10 +86,10 @@ export const save = async data => {
   }
 
   if (todayLimitStatus > 0) {
-    userController.update(interaction);
-    interaction.type !== "message" &&
-      interaction.parentUser !== interaction.user &&
-      userController.updateParentUser(interaction);
+  userController.update(interaction);
+  interaction.type !== "message" &&
+    interaction.parentUser !== interaction.user &&
+    userController.updateParentUser(interaction);
   }
 
   return response || _throw("Error adding new interaction");
