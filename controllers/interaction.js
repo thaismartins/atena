@@ -8,42 +8,62 @@ import { lastMessageTime } from "../utils/interactions";
 import { _throw, _today } from "../helpers";
 
 const normalize = data => {
-  if (data.type === "reaction_added" || data.type === "reaction_removed") {
-    return {
-      channel: data.item.channel,
-      date: new Date(),
-      description: data.reaction,
-      messageIdentifier: data.event_ts,
-      parentMessage: data.item.ts,
-      parentUser: data.item_user,
-      thread: false,
-      type: data.type,
-      user: data.user
-    };
-  } else if (data.thread_ts) {
-    return {
-      channel: data.channel,
-      date: new Date(),
-      description: data.text,
-      messageIdentifier: data.ts,
-      parentMessage: data.event_ts,
-      parentUser: data.parent_user_id,
-      thread: true,
-      type: "thread",
-      user: data.user
-    };
-  } else {
-    return {
-      channel: data.channel,
-      date: new Date(),
-      description: data.text,
-      messageIdentifier: data.ts,
-      parentMessage: null,
-      thread: false,
-      type: "message",
-      user: data.user
-    };
+  let interaction = {};
+  switch (data.type) {
+    case "reaction_added":
+      interaction = {
+        channel: data.item.channel,
+        date: new Date(),
+        description: data.reaction,
+        messageIdentifier: data.event_ts,
+        parentMessage: data.item.ts,
+        parentUser: data.item_user,
+        thread: false,
+        type: data.type,
+        user: data.user
+      };
+      break;
+    case "reaction_removed":
+      interaction = {
+        channel: data.item.channel,
+        date: new Date(),
+        description: data.reaction,
+        messageIdentifier: data.event_ts,
+        parentMessage: data.item.ts,
+        parentUser: data.item_user,
+        thread: false,
+        type: data.type,
+        user: data.user
+      };
+      break;
+    case "message":
+      if (data.thread_ts) {
+        interaction = {
+          channel: data.channel,
+          date: new Date(),
+          description: data.text,
+          messageIdentifier: data.ts,
+          parentMessage: data.event_ts,
+          parentUser: data.parent_user_id,
+          thread: true,
+          type: "thread",
+          user: data.user
+        };
+      } else {
+        interaction = {
+          channel: data.channel,
+          date: new Date(),
+          description: data.text,
+          messageIdentifier: data.ts,
+          parentMessage: null,
+          thread: false,
+          type: "message",
+          user: data.user
+        };
+      }
+      break;
   }
+  return interaction;
 };
 
 export const save = async data => {

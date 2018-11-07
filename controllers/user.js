@@ -44,38 +44,31 @@ export const updateParentUser = async interaction => {
 
 export const update = async interaction => {
   const score = calculateScore(interaction);
-  const userInfo = await getUserInfo(interaction.user);
+  const UserModel = mongoose.model("User");
+  const user = await UserModel.findOne({ slackId: interaction.user });
 
-  if (userInfo.ok) {
-    const UserModel = mongoose.model("User");
-    const user = await UserModel.findOne({ slackId: interaction.user }).exec();
-
-    if (user) {
-      return UserModel.findOne({ slackId: interaction.user }, (err, doc) => {
-        if (err) {
-          throw new Error("Error updating user");
-        }
-        const newScore = doc.score + score;
-        doc.level = calculateLevel(newScore);
-        doc.score = newScore < 0 ? 0 : newScore;
-        doc.isCoreTeam = isCoreTeam(interaction.user);
-        doc.messages =
-          interaction.type === "message" ? doc.messages + 1 : doc.messages;
-        doc.replies =
-          interaction.type === "thread" ? doc.replies + 1 : doc.replies;
-        doc.reactions =
-          interaction.type === "reaction_added"
-            ? doc.reactions + 1
-            : doc.reactions;
-        doc.reactions =
-          interaction.type === "reaction_removed"
-            ? doc.reactions - 1
-            : doc.reactions;
-        doc.save();
-        return doc;
-      });
-    } else {
-      const obj = {
+  if (user) {
+    user.score += score;
+    user.level = calculateLevel(user.score);
+    user.isCoreTeam = isCoreTeam(interaction.user);
+    switch (interaction.type) {
+      case "message":
+        user.messages++;
+        break;
+      case "thread":
+        user.replies++;
+        break;
+      case "reaction_added":
+        user.reactions_info[0].send = user.reactions_info[0].send
+          ? user.reactions_info[0].send + 1
+          : 1;
+        break;
+    }
+    const instance = new UserModel(user);
+    return instance.save();
+  } else {
+    getUserInfo(interaction.user).then(userInfo => {
+      const newUser = {
         avatar: userInfo.profile.image_72,
         name: userInfo.profile.real_name,
         level: 1,
@@ -87,12 +80,10 @@ export const update = async interaction => {
         lastUpdate: new Date(),
         isCoreTeam: isCoreTeam(interaction.user)
       };
-      const instance = new UserModel(obj);
-      sendHelloOnSlack(obj.slackId);
+      const instance = new UserModel(newUser);
+      sendHelloOnSlack(interaction.user);
       return instance.save();
-    }
-  } else {
-    throw new Error(`Error: ${userInfo.error}`);
+    });
   }
 };
 

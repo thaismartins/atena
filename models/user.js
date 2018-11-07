@@ -33,6 +33,29 @@ const userSchema = new mongoose.Schema({
     type: Number,
     required: false
   },
+  reactions_info: [
+    {
+      send: {
+        default: 0,
+        type: Number,
+        required: false
+      },
+      receive: [
+        {
+          positive: {
+            default: 0,
+            type: Number,
+            required: false
+          },
+          negative: {
+            default: 0,
+            type: Number,
+            required: false
+          }
+        }
+      ]
+    }
+  ],
   lastUpdate: {
     type: Date,
     required: true,
