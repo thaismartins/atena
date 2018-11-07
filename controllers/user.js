@@ -102,7 +102,9 @@ const getAndUpdateUser = async (interaction, isParentuser = false) => {
   const theUser = isParentuser ? interaction.parentUser : interaction.user;
   const user = await UserModel.findOne({ slackId: theUser });
   if (user) {
-    user.score += isParentuser ? calculateReceivedScore(interaction) : calculateScore(interaction);
+    user.score += isParentuser
+      ? calculateReceivedScore(interaction)
+      : calculateScore(interaction);
     user.level = calculateLevel(user.score);
     user.isCoreTeam = isCoreTeam(interaction.user);
     return user;
@@ -112,7 +114,9 @@ const getAndUpdateUser = async (interaction, isParentuser = false) => {
         avatar: userInfo.profile.image_72,
         name: userInfo.profile.real_name,
         level: 1,
-        score: isParentuser ? calculateReceivedScore(interaction) : calculateScore(interaction),
+        score: isParentuser
+          ? calculateReceivedScore(interaction)
+          : calculateScore(interaction),
         slackId: theUser,
         messages: interaction.type === "message" ? 1 : 0,
         replies: interaction.type === "thread" ? 1 : 0,
