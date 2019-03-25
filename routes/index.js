@@ -13,6 +13,7 @@ import rdRoutes from "./rdstation";
 import resourcesRoutes from "./resources";
 import achievementsTemporyDataRoutes from "./achievementsTemporyData";
 import minerRoutes from "./miner";
+import interactionsHistory from "./interactionsHistory";
 import { renderScreen } from "../utils/ssr";
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.use("/slack", slackRoutes);
 router.use("/rocket", rocketRoutes);
 router.use("/ranking", rankingRoutes);
 router.use("/interactions", interactionsRoutes);
+router.use("/interactions/history", interactionsHistory);
 router.use("/game", gameRoutes);
 router.use("/user", userRoutes);
 router.use("/bot/commands", botRoutes);

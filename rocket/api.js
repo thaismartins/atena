@@ -35,4 +35,14 @@ export const getUserInfoByUsername = async username => {
   }
 };
 
+export const getMessagesByRoomId = async roomId => {
+  try {
+    const result = await api.get("channels.history", { roomId: roomId });
+    return result;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+};
+
 runAPI();

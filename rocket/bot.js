@@ -39,7 +39,7 @@ const processMessages = async (err, message, messageOptions) => {
 
 export const sendToUser = async (message, user) => {
   try {
-    await driver.sendDirectToUser(message, user);
+    // await driver.sendDirectToUser(message, user);
     return true;
   } catch (e) {
     console.log(e);
@@ -49,7 +49,7 @@ export const sendToUser = async (message, user) => {
 
 export const sendMessage = async (message, room = "comunicados") => {
   try {
-    await driver.sendToRoom(message, room);
+    // await driver.sendToRoom(message, room);
     return true;
   } catch (e) {
     console.log(e);
