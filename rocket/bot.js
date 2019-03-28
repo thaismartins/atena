@@ -3,6 +3,8 @@ import interactionController from "../controllers/interaction";
 import rankingController from "../controllers/ranking";
 import userController from "../controllers/user";
 import achievementController from "../controllers/achievement";
+import missionController from "../controllers/mission";
+
 var myuserid;
 const runBot = async () => {
   await driver.connect({
@@ -24,8 +26,11 @@ const commands = async message => {
     ranking: /!ranking/g,
     rankingGeral: /!rankinggeral/g,
     meusPontos: /!meuspontos/g,
-    minhasConquistas: /!minhasconquistas/g
+    minhasConquistas: /!minhasconquistas/g,
+    missao: /!missao/g
   };
+
+  console.log("message.msg", message.msg);
 
   if (regex.ranking.test(message.msg)) {
     await rankingController.commandIndex(message);
@@ -35,6 +40,8 @@ const commands = async message => {
     await rankingController.commandGeneral(message);
   } else if (regex.minhasConquistas.test(message.msg)) {
     await achievementController.commandIndex(message);
+  } else if (regex.missao.test(message.msg)) {
+    await missionController.commandIndex(message);
   }
 
   return;

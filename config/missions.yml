@@ -1,0 +1,5 @@
+quiz:
+  limitDate: 8
+  xp:
+    owner: 5
+    atena: 10

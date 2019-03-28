@@ -8,6 +8,7 @@ import interactionController from "../controllers/interaction";
 import achievementController from "../controllers/achievement";
 import achievementTemporaryController from "../controllers/achievementTemporary";
 import achievementLevelController from "../controllers/achievementLevel";
+import missionController from "../controllers/mission";
 import rankingController from "../controllers/ranking";
 import { isCoreTeam } from "../utils";
 import { sendMessage } from "../rocket/bot";
@@ -214,6 +215,27 @@ router.post("/minhasconquistas", urlencodedParser, async (req, res) => {
     }
   } catch (e) {
     console.log("Bot -> Minhas Conquistas:", e);
+  }
+
+  res.json(response);
+});
+
+router.post("/missao", urlencodedParser, async (req, res) => {
+  let response = {
+    text: "Ops! Não podemos gerar uma nova missão. :("
+  };
+
+  try {
+    if (req.headers.origin !== "rocket") {
+      res.json(
+        "Ops! Você não tem permissão para acessar essa funcionalidade. :("
+      );
+      return;
+    }
+
+    response = await missionController.commandIndex(req.body);
+  } catch (e) {
+    console.log("Bot -> Missão:", e);
   }
 
   res.json(response);
