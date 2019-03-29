@@ -30,33 +30,29 @@ const commandIndex = async data => {
     if (hasUserToSend(data.msg)) {
       console.log("TODO! Enviado por outro usuário.");
       reciever = await getReciever(data.msg);
-      if (reciever) {
-        console.log('reciever', reciever);
-      }
     } else {
       console.log("TODO! Enviado por mesmo usuário.");
       reciever = sender; // TODO: verificar melhor solução
       accepted = true;
     }
 
-    let quiz = getNewQuiz();
-    let mission = new MissionModel({
-      kind: "network.mission.quiz",
-      kindId: quiz.id, // TODO: substituir por id do miner,
-      user: reciever._id,
-      createdBy: sender._id,
-      limitDate: generateLimitDate(),
-      accepted: accepted
-    });
+    if (reciever) {
+      // TODO: se já tem 2 ao mesmo tempo - Ops! Você não pode mais receber nenhuma missão por enquanto. :(
 
-    // TODO: validar se tem usuário
-    // Não tem
-    // TODO: se já tem 2 ao mesmo tempo - Ops! Você não pode mais receber nenhuma missão por enquanto. :(
+      // TODO: buscar missao do miner
+      let quiz = getNewQuiz();
+      let mission = new MissionModel({
+        kind: "network.mission.quiz",
+        kindId: quiz.id, // TODO: substituir por id do miner,
+        user: reciever._id,
+        createdBy: sender._id,
+        limitDate: generateLimitDate(),
+        accepted: accepted
+      });
 
-    // TODO: buscar missao do miner
-
-    // TODO: se foi enviado por outra pessoa, mandar mensagem para pessoa
-    // TODO: salvar conquistas
+      // TODO: se foi enviado por outra pessoa, mandar mensagem para pessoa
+      // TODO: salvar conquistas
+    }
   }
 
   return response;
