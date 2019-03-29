@@ -1,11 +1,18 @@
 import userController from "./user";
 import MissionModel from "../models/mission";
-import { hasUserToSend, generateLimitDate } from "../utils/missions";
-import { getNewQuiz } from "../utils/miner";
+import {
+  hasUserToSend,
+  generateLimitDate,
+  getSenderUsername
+} from "../utils/missions";
+import {
+  getNewQuiz
+} from "../utils/miner";
+import {
+  getUserInfoByUsername
+} from "../rocket/api";
 
 const commandIndex = async data => {
-  console.log("entrou no commandIndex", data);
-
   let response = {
     text: "Ops! Não podemos gerar uma nova missão. :("
   };
@@ -20,9 +27,14 @@ const commandIndex = async data => {
   let accepted = false;
 
   if (sender) {
-    if (hasUserToSend()) {
+    if (hasUserToSend(data.msg)) {
       console.log("TODO! Enviado por outro usuário.");
+      reciever = await getReciever(data.msg);
+      if (reciever) {
+        console.log('reciever', reciever);
+      }
     } else {
+      console.log("TODO! Enviado por mesmo usuário.");
       reciever = sender; // TODO: verificar melhor solução
       accepted = true;
     }
@@ -52,6 +64,22 @@ const commandIndex = async data => {
 
 const save = async data => {
   console.log(data);
+};
+
+const getReciever = async data => {
+  const username = getSenderUsername(data);
+
+  if (username) {
+    const rocketUser = await getUserInfoByUsername(username);
+    if (rocketUser) {
+      return await userController.findByOrigin({
+        origin: "rocket",
+        user: rocketUser._id
+      });
+    }
+  }
+
+  return false;
 };
 
 export default {

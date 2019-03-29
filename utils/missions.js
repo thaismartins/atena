@@ -1,12 +1,12 @@
 import moment from "moment-timezone";
 import config from "config-yml";
 
-export const hasUserToSend = () => {
-  return false;
+export const hasUserToSend = data => {
+  return data.includes("@");
 };
 
-export const getSenderUsername = () => {
-  return true;
+export const getSenderUsername = data => {
+  return data.replace(/.*@/, "") || false;
 };
 
 export const generateLimitDate = () => {
