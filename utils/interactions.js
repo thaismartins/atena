@@ -37,3 +37,10 @@ export const isChatInteraction = interaction => {
       interaction.action === config.actions.message.type)
   );
 };
+
+export const isMissionInteraction = interaction => {
+  return (
+    interaction.type === "mission" &&
+    interaction.action === config.actions.mission.type
+  );
+};

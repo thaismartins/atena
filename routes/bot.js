@@ -20,9 +20,15 @@ import {
 
 const router = express.Router();
 
-const urlencodedParser = bodyParser.urlencoded({ extended: true });
+const urlencodedParser = bodyParser.urlencoded({
+  extended: true
+});
 router.use(bodyParser.json());
-router.use(bodyParser.urlencoded({ extended: true }));
+router.use(
+  bodyParser.urlencoded({
+    extended: true
+  })
+);
 
 router.post("/score", urlencodedParser, async (req, res) => {
   let user = {};
@@ -33,9 +39,13 @@ router.post("/score", urlencodedParser, async (req, res) => {
   };
   if (req.headers.origin === "rocket") {
     req.body.user_id = req.body.id;
-    query_user = { rocketId: req.body.user_id };
+    query_user = {
+      rocketId: req.body.user_id
+    };
   } else {
-    query_user = { slackId: req.body.user_id };
+    query_user = {
+      slackId: req.body.user_id
+    };
   }
   try {
     user = await userController.findBy(query_user);
@@ -155,7 +165,9 @@ router.post("/sendpoints", urlencodedParser, async (req, res) => {
 });
 
 router.post("/minhasconquistas", urlencodedParser, async (req, res) => {
-  let response = { text: "Ops! Você ainda não tem conquistas registradas. :(" };
+  let response = {
+    text: "Ops! Você ainda não tem conquistas registradas. :("
+  };
 
   try {
     let user = {};
@@ -221,9 +233,7 @@ router.post("/minhasconquistas", urlencodedParser, async (req, res) => {
 });
 
 router.post("/missao", urlencodedParser, async (req, res) => {
-  let response = {
-    text: "Ops! Não podemos gerar uma nova missão. :("
-  };
+  let response;
 
   try {
     if (req.headers.origin !== "rocket") {

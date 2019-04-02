@@ -32,6 +32,10 @@ const missonSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
   limitDate: {
     type: Date,
     required: true,
