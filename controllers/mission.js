@@ -9,8 +9,8 @@ import {
   isAnswer
 } from "../utils/missions";
 import { getNewQuiz } from "../utils/miner";
-import { getUserInfoByUsername } from "../rocket/api";
-import { sendMessage, sendToUser } from "../rocket/bot";
+import { getUserInfoByUsername, sendMessageTest } from "../rocket/api";
+import { sendToUser } from "../rocket/bot";
 
 const commandIndex = async data => {
   let response;
@@ -69,14 +69,10 @@ const create = async data => {
         accepted: hasOtherReciever ? false : true
       });
 
-      // await mission.save();
+      await mission.save();
 
       if (hasOtherReciever) {
-        sendToUser(
-          "Nobre guerreiro(a), você acabou de receber uma nova missão! Para aceitá-la, me responda com: *!missao SIM*. Para recusá-lá: *!missao NÃO*.",
-          username
-        );
-
+        await sendToUser(generateMessage(), username);
         response.text = `Uhuul! Uma nova missão foi enviada para @${username}. :)`;
       } else {
         response.text = "Uhuul! Sua nova missão foi criada! :)";
@@ -100,7 +96,6 @@ const answer = async data => {
   // TODO: alterar accepted
 
   if (answerOnDeadLinete()) {
-
   }
   console.log(data);
   return {
@@ -124,6 +119,32 @@ const getRecieverByUsername = async username => {
   }
 
   return false;
+};
+
+const generateMessage = () => {
+  let optionsText = "";
+  let reactions = {};
+
+  const options = [
+    {
+      value: ":+1:",
+      label: "Aceitar"
+    },
+    {
+      value: ":-1:",
+      label: "Recusar"
+    }
+  ];
+
+  options.forEach(option => {
+    optionsText += ` ${option.value} ${option.label} `;
+    reactions[`${option.value}`] = { usernames: ["atena-thais-bot"] }; // TODO: encontrar dado do bot
+  });
+
+  return {
+    msg: `*Nobre guerreiro(a), você acabou de receber uma nova missão! \n\n ${optionsText} \n **Responda clicando em uma das opções a seguir:**`,
+    reactions
+  };
 };
 
 const userCanGetNewMission = async user => {
