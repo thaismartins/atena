@@ -1,5 +1,7 @@
 quiz:
-  limitDate: 8
+  limit:
+    date: 8
+    simultaneously: 2
   xp:
     owner: 5
     atena: 10

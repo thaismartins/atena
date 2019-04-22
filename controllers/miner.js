@@ -10,8 +10,17 @@ const isMiner = async (req, res) => {
   }
   return isMiner;
 };
+
+const getNewQuiz = async user => {
+  // TODO: buscar no miner
+  return {
+    _id: 12345678
+  };
+};
+
 const exportFunctions = {
-  isMiner
+  isMiner,
+  getNewQuiz
 };
 
 export default exportFunctions;

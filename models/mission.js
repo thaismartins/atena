@@ -10,10 +10,8 @@ const missonSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // MINER ID
   kindId: {
-    type: Number,
-    required: true
+    type: Number
   },
   accepted: {
     type: Boolean,
@@ -40,6 +38,12 @@ const missonSchema = new mongoose.Schema({
     type: Date,
     required: true,
     default: Date.now
+  },
+  acceptedDate: {
+    type: Date
+  },
+  refusedDate: {
+    type: Date
   }
 });
 

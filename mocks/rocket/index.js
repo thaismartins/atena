@@ -123,6 +123,38 @@ export const messageAttachmentFromHistory = {
   }
 };
 
+export const messageWithMission = {
+  _id: "9iu48nfao3xPWLrkp",
+  rid: "GENERAL",
+  msg: "!missao",
+  ts: { $date: 1551699287633 },
+  u: {
+    _id: "ueofoughzADn6uA3T",
+    username: "ikki",
+    name: "Ikki de Fênix"
+  },
+  _updatedAt: { $date: 1551699287653 },
+  mentions: [],
+  channels: [],
+  origin: "rocket"
+};
+
+export const messageWithMissionToAnotherUser = {
+  _id: "9iu48nfao3xPWLrkp",
+  rid: "GENERAL",
+  msg: "!missao @thais.martins",
+  ts: { $date: 1551699287633 },
+  u: {
+    _id: "ueofoughzADn6uA3T",
+    username: "ikki",
+    name: "Ikki de Fênix"
+  },
+  _updatedAt: { $date: 1551699287653 },
+  mentions: [],
+  channels: [],
+  origin: "rocket"
+};
+
 export const saveInteraction = {
   _id: "5c97bb78079546634e30a20",
   thread: false,
