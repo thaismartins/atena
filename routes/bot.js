@@ -37,6 +37,7 @@ router.post("/score", urlencodedParser, async (req, res) => {
   let response = {
     text: "Ops! Você ainda não tem pontos registrados."
   };
+
   if (req.headers.origin === "rocket") {
     req.body.user_id = req.body.id;
     query_user = {
@@ -47,6 +48,7 @@ router.post("/score", urlencodedParser, async (req, res) => {
       slackId: req.body.user_id
     };
   }
+
   try {
     user = await userController.findBy(query_user);
     myPosition = await userController.rankingPosition(req.body.user_id);
