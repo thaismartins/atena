@@ -2,6 +2,8 @@ import moment from "moment-timezone";
 import config from "config-yml";
 
 import MissionModel from "../models/mission";
+import rocket from "../rocket/api";
+import userController from "../controllers/user";
 
 export const sendedToAnotherUser = (message, user) => {
   const sendedUser = getSenderUsername(message);
@@ -19,10 +21,9 @@ export const getSenderUsername = message => {
 
 export const generateLimitDate = () => {
   return moment(Date.Now)
-    .startOf("day")
+    .endOf("day")
     .utc()
     .add(config.missions.quiz.limit.date, "days")
-    .endOf("day")
     .toISOString();
 };
 
@@ -31,6 +32,14 @@ export const isAcceptedAnswer = data => {
     data.description &&
     (data.description.includes(":+1:") ||
       data.description.includes(":thumbsup:"))
+  );
+};
+
+export const isRefusedAnswer = data => {
+  return (
+    data.description &&
+    (data.description.includes(":-1:") ||
+      data.description.includes(":thumbsdown:"))
   );
 };
 
@@ -71,4 +80,47 @@ export const userAbleToReceiveNewMission = async user => {
   });
 
   return missions.length < config.missions.quiz.limit.simultaneously;
+};
+
+export const getReceiverByUsername = async username => {
+  if (username) {
+    const rocketUser = await rocket.getUserInfoByUsername(username);
+    if (rocketUser) {
+      return await userController.findByOrigin({
+        origin: "rocket",
+        user: rocketUser._id
+      });
+    }
+  }
+
+  return false;
+};
+
+export const generateMessage = missionId => {
+  let optionsText = "";
+  let reactions = {};
+
+  const options = [
+    {
+      value: ":+1:",
+      label: "Aceitar"
+    },
+    {
+      value: ":-1:",
+      label: "Recusar"
+    }
+  ];
+
+  options.forEach(option => {
+    optionsText += ` ${option.value} ${option.label} \n\n`;
+    reactions[`${option.value}`] = {
+      usernames: [process.ENV.ROCKET_BOT_USER]
+    };
+  });
+
+  return {
+    msg: `*Nobre guerreiro(a), você acabou de receber uma nova missão!* \n\n ${optionsText} \n **Responda clicando em uma das opções a seguir:**`,
+    researchHash: missionId, // TODO: encrypt
+    reactions
+  };
 };

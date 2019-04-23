@@ -7,9 +7,11 @@ import {
   isAcceptedAnswer,
   isInLimitDate,
   userAbleToReceiveNewMission,
-  isInDailyLimit
+  isInDailyLimit,
+  getReceiverByUsername,
+  generateMessage,
+  isRefusedAnswer
 } from "../utils/missions";
-import rocket from "../rocket/api";
 import { sendToUser } from "../rocket/bot";
 import minerController from "./miner";
 
@@ -59,7 +61,7 @@ const createToSameUser = async sender => {
 const createToAnotherUser = async (sender, data) => {
   let response = "Ops! Não podemos gerar uma nova missão. :(";
   const username = getSenderUsername(data.msg);
-  const receiver = await getRecieverByUsername(username);
+  const receiver = await getReceiverByUsername(username);
 
   if (!receiver) {
     response =
@@ -108,7 +110,7 @@ const answer = async data => {
   };
 
   try {
-    const mission = await MissionModel.findById(data.researchHash).exec();
+    const mission = await MissionModel.find({ _id: data.researchHash });
     if (!mission) {
       return response;
     }
@@ -127,19 +129,21 @@ const answer = async data => {
 
     if (!isInLimitDate(mission.limitDate)) {
       response.text =
-        "Poxa, já passou a data limite para entrar nessa missão. :(";
+        "Que pena, já passou a data limite para entrar nessa missão. :(";
       return response;
     }
 
     if (isAcceptedAnswer(data.msg)) {
       const quiz = await minerController.getNewQuiz();
-      await acceptMission(mission, quiz);
+      await defaultFunctions.acceptMission(mission, quiz);
       response.text =
         "Oba, missão foi aceita! :) \n Aguarde sua enquete chegará em breve.";
-    } else {
-      await refuseMission(mission);
+    } else if (isRefusedAnswer(data.msg)) {
+      await defaultFunctions.refuseMission(mission);
       response.text =
         "Que pena que não deseja participar dessa luta. \n Mas quando mudar de ideia, só enviar *!missao* que te enviamos uma missão novinha! ;)";
+    } else {
+      response.text = "Responda com :+1: para aceitar e :-1: para recusar.";
     }
   } catch (error) {
     console.log("error", error);
@@ -165,52 +169,13 @@ const refuseMission = async mission => {
   return await mission.save();
 };
 
-const getRecieverByUsername = async username => {
-  if (username) {
-    const rocketUser = await rocket.getUserInfoByUsername(username);
-    if (rocketUser) {
-      return await userController.findByOrigin({
-        origin: "rocket",
-        user: rocketUser._id
-      });
-    }
-  }
-
-  return false;
-};
-
-const generateMessage = missionId => {
-  let optionsText = "";
-  let reactions = {};
-
-  const options = [
-    {
-      value: ":+1:",
-      label: "Aceitar"
-    },
-    {
-      value: ":-1:",
-      label: "Recusar"
-    }
-  ];
-
-  options.forEach(option => {
-    optionsText += ` ${option.value} ${option.label} \n\n`;
-    reactions[`${option.value}`] = { usernames: ["atena-thais-bot"] }; // TODO: encontrar dado do bot
-  });
-
-  return {
-    msg: `*Nobre guerreiro(a), você acabou de receber uma nova missão!* \n\n ${optionsText} \n **Responda clicando em uma das opções a seguir:**`,
-    researchHash: missionId, // TODO: encrypt
-    reactions
-  };
-};
-
 const defaultFunctions = {
   commandIndex,
   create,
   createToAnotherUser,
   createToSameUser,
+  acceptMission,
+  refuseMission,
   answer,
   save
 };
