@@ -7,7 +7,8 @@ import {
   isAcceptedAnswer,
   isInLimitDate,
   isInDailyLimit,
-  userAbleToReceiveNewMission
+  userAbleToReceiveNewMission,
+  isRefusedAnswer
 } from "./missions";
 import { interactionWithReaction } from "../mocks/interactions";
 import { missionNotAccepted } from "../mocks/missions";
@@ -98,7 +99,7 @@ describe.only("Missions Util", () => {
   });
 
   describe("isAcceptedAnswer", () => {
-    it("should return true to empty reaction", done => {
+    it("should return false to empty reaction", done => {
       const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
       interaction.description = "";
       const isAccepted = isAcceptedAnswer(interaction);
@@ -106,14 +107,14 @@ describe.only("Missions Util", () => {
       done();
     });
 
-    it("should return true to another reaction", done => {
+    it("should return false to another reaction", done => {
       const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
       const isAccepted = isAcceptedAnswer(interaction);
       expect(isAccepted).toBeFalsy();
       done();
     });
 
-    it("should return true to negative :-1: reaction", done => {
+    it("should return false to negative :-1: reaction", done => {
       const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
       interaction.description = ":-1:";
       const isAccepted = isAcceptedAnswer(interaction);
@@ -121,7 +122,7 @@ describe.only("Missions Util", () => {
       done();
     });
 
-    it("should return true to negative :thumbsdown: reaction", done => {
+    it("should return false to negative :thumbsdown: reaction", done => {
       const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
       interaction.description = ":thumbsdown:";
       const isAccepted = isAcceptedAnswer(interaction);
@@ -142,6 +143,55 @@ describe.only("Missions Util", () => {
       interaction.description = ":thumbsup:";
       const isAccepted = isAcceptedAnswer(interaction);
       expect(isAccepted).toBeTruthy();
+      done();
+    });
+  });
+
+  describe("isRefusedAnswer", () => {
+    it("should return false to empty reaction", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      interaction.description = "";
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeFalsy();
+      done();
+    });
+
+    it("should return false to another reaction", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeFalsy();
+      done();
+    });
+
+    it("should return true to negative :-1: reaction", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      interaction.description = ":-1:";
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeTruthy();
+      done();
+    });
+
+    it("should return true to negative :thumbsdown: reaction", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      interaction.description = ":thumbsdown:";
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeTruthy();
+      done();
+    });
+
+    it("should return false to positive :+1:", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      interaction.description = ":+1:";
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeFalsy();
+      done();
+    });
+
+    it("should return false to positive :thumbsup:", done => {
+      const interaction = JSON.parse(JSON.stringify(interactionWithReaction));
+      interaction.description = ":thumbsup:";
+      const isAccepted = isRefusedAnswer(interaction);
+      expect(isAccepted).toBeFalsy();
       done();
     });
   });

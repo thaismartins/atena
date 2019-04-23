@@ -142,7 +142,7 @@ export const messageWithMission = {
 export const messageWithMissionToAnotherUser = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
-  msg: "!missao @thais.martins",
+  msg: "!missao @mary",
   ts: { $date: 1551699287633 },
   u: {
     _id: "ueofoughzADn6uA3T",
@@ -153,6 +153,48 @@ export const messageWithMissionToAnotherUser = {
   mentions: [],
   channels: [],
   origin: "rocket"
+};
+
+export const messageWithAnswerMissionPositive = {
+  _id: "9iu48nfao3xPWLrkp",
+  rid: "GENERAL",
+  msg: "!missao",
+  ts: { $date: 1551699287633 },
+  u: {
+    _id: "ueofoughzADn6uA3T",
+    username: "ikki",
+    name: "Ikki de Fênix"
+  },
+  _updatedAt: { $date: 1551699287653 },
+  mentions: [],
+  channels: [],
+  origin: "rocket",
+  reactions: {
+    ":+1:": ["atena-bot", "john-doe"],
+    ":-1:": ["atena-bot"]
+  },
+  researchHash: "5cbbce6c8180335a624d4b59"
+};
+
+export const messageWithAnswerMissionNegative = {
+  _id: "9iu48nfao3xPWLrkp",
+  rid: "GENERAL",
+  msg: "!missao",
+  ts: { $date: 1551699287633 },
+  u: {
+    _id: "ueofoughzADn6uA3T",
+    username: "ikki",
+    name: "Ikki de Fênix"
+  },
+  _updatedAt: { $date: 1551699287653 },
+  mentions: [],
+  channels: [],
+  origin: "rocket",
+  reactions: {
+    ":+1:": ["atena-bot", "john-doe"],
+    ":-1:": ["atena-bot"]
+  },
+  researchHash: "5cbbce6c8180335a624d4b59"
 };
 
 export const saveInteraction = {

@@ -17,7 +17,7 @@ export const interactionWithMission = {
   category: "network",
   channel: "4eS6cTjteeAPWgQbf",
   date: "3/25/2019, 5:24:23 PM",
-  type: "reaction_added",
+  type: "message",
   description: "!missao",
   parentUser: null,
   user: null,
@@ -31,11 +31,25 @@ export const interactionWithMissionToAnotherUser = {
   category: "network",
   channel: "4eS6cTjteeAPWgQbf",
   date: "3/25/2019, 5:24:23 PM",
-  type: "reaction_added",
+  type: "message",
   description: "!missao @john-doe",
   parentUser: null,
   user: null,
   action: "reaction",
   score: 1,
   researchHash: null
+};
+
+export const interactionWithMissionAnswer = {
+  origin: "rocket",
+  category: "network",
+  channel: "4eS6cTjteeAPWgQbf",
+  date: "3/25/2019, 5:24:23 PM",
+  type: "reaction_added",
+  description: ":+1:",
+  parentUser: null,
+  user: null,
+  action: "reaction",
+  score: 1,
+  researchHash: "5cbbce6c8180335a624d4b59"
 };
