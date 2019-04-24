@@ -155,7 +155,7 @@ export const messageWithMissionToAnotherUser = {
   origin: "rocket"
 };
 
-export const messageWithAnswerMissionPositive = {
+export const messageWithAnswerMissionAccepted = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
   msg: "!missao",
@@ -176,14 +176,14 @@ export const messageWithAnswerMissionPositive = {
   researchHash: "5cbbce6c8180335a624d4b59"
 };
 
-export const messageWithAnswerMissionNegative = {
+export const messageWithAnswerMissionRefused = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
   msg: "!missao",
   ts: { $date: 1551699287633 },
   u: {
     _id: "ueofoughzADn6uA3T",
-    username: "ikki",
+    username: process.env.ROCKET_BOT_USER,
     name: "Ikki de Fênix"
   },
   _updatedAt: { $date: 1551699287653 },

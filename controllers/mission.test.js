@@ -2,7 +2,9 @@ import controller from "./mission";
 import model from "../models/mission";
 import {
   messageWithMission,
-  messageWithMissionToAnotherUser
+  messageWithMissionToAnotherUser,
+  messageWithAnswerMissionRefused,
+  messageWithAnswerMissionAccepted
 } from "../mocks/rocket";
 import { missionAccepted, missionNotAccepted } from "../mocks/missions";
 import userController from "./user";
@@ -11,52 +13,86 @@ import { user } from "../mocks/user";
 import { quiz } from "../mocks/miner/quiz";
 import * as utils from "../utils/missions";
 import * as rocket from "../rocket/bot";
-import { interactionWithMissionAnswer } from "../mocks/interactions";
-jest.mock("./user");
 
 describe("Mission Controller", () => {
+  const acceptedData = {
+    reaction: "accepted",
+    researchHash: missionAccepted._id
+  };
+
+  const refusedData = {
+    reaction: "refused",
+    researchHash: missionAccepted._id
+  };
+
   afterEach(() => jest.restoreAllMocks());
 
   describe("commandIndex", () => {
     it("should call 'create' function on ask mission to his own", done => {
+      const response = {
+        text: "Uhuul! Sua nova missão foi criada! :muscle:"
+      };
+
       const spy = jest
         .spyOn(controller, "create")
-        .mockImplementationOnce(() => Promise.resolve(missionAccepted));
+        .mockImplementationOnce(() => Promise.resolve(response));
+
+      const spySendMessage = jest
+        .spyOn(rocket, "sendToUser")
+        .mockImplementationOnce(() => Promise.resolve(true));
 
       controller.commandIndex(messageWithMission).then(res => {
         expect(spy).toHaveBeenCalled();
-        expect(res).toEqual(missionAccepted);
+        expect(spySendMessage).toHaveBeenCalled();
+        expect(res).toHaveProperty("text");
+        expect(res).toEqual(response);
         done();
       });
     });
 
     it("should call 'create' function on ask mission to another user", done => {
+      const username = messageWithMissionToAnotherUser.u.username;
+      const response = {
+        text: `Uhuul! Uma nova missão foi enviada para @${username}! :muscle:`
+      };
+
       const spy = jest
         .spyOn(controller, "create")
-        .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
+        .mockImplementationOnce(() => Promise.resolve(response));
+
+      const spySendMessage = jest
+        .spyOn(rocket, "sendToUser")
+        .mockImplementationOnce(() => Promise.resolve(true));
 
       controller.commandIndex(messageWithMissionToAnotherUser).then(res => {
         expect(spy).toHaveBeenCalled();
-        expect(res).toEqual(missionNotAccepted);
+        expect(spySendMessage).toHaveBeenCalled();
+        expect(res).toHaveProperty("text");
+        expect(res).toEqual(response);
         done();
       });
     });
   });
 
   describe("create", () => {
-    userController.findByOrigin = jest.fn().mockImplementationOnce(() => user);
-
     it("should return a new mission accepted on ask mission to his own", done => {
-      utils.sendedToAnotherUser = jest.fn().mockImplementationOnce(() => false);
-
       const spy = jest
+        .spyOn(userController, "findByOrigin")
+        .mockImplementationOnce(() => user);
+
+      const spySended = jest
+        .spyOn(utils, "sendedToAnotherUser")
+        .mockImplementationOnce(() => false);
+
+      const spyCreate = jest
         .spyOn(controller, "createToSameUser")
         .mockImplementationOnce(() => Promise.resolve(missionAccepted));
 
       controller.create(messageWithMission).then(res => {
         expect(userController.findByOrigin).toHaveBeenCalled();
-        expect(utils.sendedToAnotherUser).toHaveBeenCalled();
         expect(spy).toHaveBeenCalled();
+        expect(spySended).toHaveBeenCalled();
+        expect(spyCreate).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toHaveProperty("_id");
         expect(res.text).toHaveProperty("accepted", true);
@@ -68,20 +104,23 @@ describe("Mission Controller", () => {
     });
 
     it("should return a new mission accepted on ask mission to another user", done => {
-      userController.findByOrigin = jest
-        .fn()
+      const spy = jest
+        .spyOn(userController, "findByOrigin")
         .mockImplementationOnce(() => user);
 
-      utils.sendedToAnotherUser = jest.fn().mockImplementationOnce(() => true);
+      const spySended = jest
+        .spyOn(utils, "sendedToAnotherUser")
+        .mockImplementationOnce(() => true);
 
-      const spy = jest
+      const spyCreate = jest
         .spyOn(controller, "createToAnotherUser")
         .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
 
-      controller.create(messageWithMission).then(res => {
+      controller.create(messageWithMissionToAnotherUser).then(res => {
         expect(userController.findByOrigin).toHaveBeenCalled();
-        expect(utils.sendedToAnotherUser).toHaveBeenCalled();
         expect(spy).toHaveBeenCalled();
+        expect(spySended).toHaveBeenCalled();
+        expect(spyCreate).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toHaveProperty("_id");
         expect(res.text).toHaveProperty("accepted", false);
@@ -125,7 +164,7 @@ describe("Mission Controller", () => {
         expect(spy).toHaveBeenCalled();
         expect(spyQuiz).toHaveBeenCalled();
         expect(spySave).toHaveBeenCalled();
-        expect(res).toEqual("Uhuul! Sua nova missão foi criada! :)");
+        expect(res).toEqual("Uhuul! Sua nova missão foi criada! :muscle:");
         done();
       });
     });
@@ -208,7 +247,7 @@ describe("Mission Controller", () => {
           expect(spySendMessage).toHaveBeenCalled();
           expect(spySave).toHaveBeenCalled();
           expect(res).toEqual(
-            "Uhuul! Uma nova missão foi enviada para @mary. :)"
+            "Uhuul! Uma nova missão foi enviada para @mary! :muscle:"
           );
           done();
         });
@@ -216,39 +255,78 @@ describe("Mission Controller", () => {
   });
 
   describe("answer", () => {
-    it("should return undefined to empty researchHash", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-      interaction.researchHash = null;
-      controller.answer(interaction).then(res => {
+    it("should return undefined to invalid message", done => {
+      const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => undefined);
+
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
+        expect(spy).toHaveBeenCalled();
         expect(res).toBeUndefined();
         done();
       });
     });
 
-    it("should return undefined to undefined researchHash", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-      delete interaction.researchHash;
-      controller.answer(interaction).then(res => {
-        expect(res).toBeUndefined();
-        done();
-      });
-    });
-
-    it("should return error message to invalid researchHash", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
+    it("should return undefined to empty reaction", done => {
+      const data = JSON.parse(JSON.stringify(acceptedData));
+      data.reaction = null;
 
       const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => data);
+
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
+        expect(spy).toHaveBeenCalled();
+        expect(res).toBeUndefined();
+        done();
+      });
+    });
+
+    it("should return undefined to empty researchHash", done => {
+      const data = JSON.parse(JSON.stringify(acceptedData));
+      data.researchHash = null;
+
+      const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => data);
+
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
+        expect(spy).toHaveBeenCalled();
+        expect(res).toBeUndefined();
+        done();
+      });
+    });
+
+    it("should return error message to invalid reaction", done => {
+      const data = JSON.parse(JSON.stringify(acceptedData));
+      data.reaction = "atena";
+
+      const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => data);
+
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
+        expect(spy).toHaveBeenCalled();
+        expect(res).toHaveProperty("text");
+        expect(res.text).toEqual(
+          "Responda com :+1: para aceitar e :-1: para recusar."
+        );
+        done();
+      });
+    });
+
+    it("should return error message to not founded mission", done => {
+      const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
+
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(false));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toEqual(
           "Ops! Não conseguimos encontrar sua missão. :("
@@ -258,16 +336,17 @@ describe("Mission Controller", () => {
     });
 
     it("should return error message to already accepted mission", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
       const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
+
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(missionAccepted));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toEqual("Você já respondeu a esse desafio! :)");
         done();
@@ -275,20 +354,21 @@ describe("Mission Controller", () => {
     });
 
     it("should return error message to already refused mission", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
+      const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
 
       const mission = JSON.parse(JSON.stringify(missionAccepted));
       mission.refusedDate = mission.acceptedDate;
       delete mission.acceptedDate;
 
-      const spy = jest
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(mission));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionAccepted).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toEqual("Você já respondeu a esse desafio! :)");
         done();
@@ -296,11 +376,11 @@ describe("Mission Controller", () => {
     });
 
     it("should return error message to daily limit exceeded", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
       const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
+
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
 
@@ -308,8 +388,9 @@ describe("Mission Controller", () => {
         .spyOn(utils, "isInDailyLimit")
         .mockImplementationOnce(() => Promise.resolve(false));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(spyLimit).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
         expect(res.text).toEqual(
@@ -320,11 +401,11 @@ describe("Mission Controller", () => {
     });
 
     it("should return error message to outdated limit", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
       const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
+
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
 
@@ -336,8 +417,9 @@ describe("Mission Controller", () => {
         .spyOn(utils, "isInLimitDate")
         .mockImplementationOnce(() => false);
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(spyLimit).toHaveBeenCalled();
         expect(spyLimitDate).toHaveBeenCalled();
         expect(res).toHaveProperty("text");
@@ -348,51 +430,12 @@ describe("Mission Controller", () => {
       });
     });
 
-    it("should return error message to invalid reaction sended", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
+    it("should return success message to accepted reaction", done => {
       const spy = jest
-        .spyOn(model, "find")
-        .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => acceptedData);
 
-      const spyLimit = jest
-        .spyOn(utils, "isInDailyLimit")
-        .mockImplementationOnce(() => Promise.resolve(true));
-
-      const spyLimitDate = jest
-        .spyOn(utils, "isInLimitDate")
-        .mockImplementationOnce(() => true);
-
-      const spyAccepted = jest
-        .spyOn(utils, "isAcceptedAnswer")
-        .mockImplementationOnce(() => false);
-
-      const spyRefused = jest
-        .spyOn(utils, "isRefusedAnswer")
-        .mockImplementationOnce(() => false);
-
-      controller.answer(interaction).then(res => {
-        expect(spy).toHaveBeenCalled();
-        expect(spyLimit).toHaveBeenCalled();
-        expect(spyLimitDate).toHaveBeenCalled();
-        // expect(spyAccepted).toHaveBeenCalled();
-        // expect(spyRefused).toHaveBeenCalled();
-        expect(res).toHaveProperty("text");
-        expect(res.text).toEqual(
-          "Responda com :+1: para aceitar e :-1: para recusar."
-        );
-        done();
-      });
-    });
-
-    it("should return success message to accepted reaction sended", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
-      const spy = jest
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
 
@@ -420,8 +463,9 @@ describe("Mission Controller", () => {
         .spyOn(controller, "acceptMission")
         .mockImplementationOnce(() => Promise.resolve(true));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(spyLimit).toHaveBeenCalled();
         expect(spyLimitDate).toHaveBeenCalled();
         expect(spyAccepted).toHaveBeenCalled();
@@ -436,12 +480,12 @@ describe("Mission Controller", () => {
       });
     });
 
-    it("should return success message to refused reaction sended", done => {
-      const interaction = JSON.parse(
-        JSON.stringify(interactionWithMissionAnswer)
-      );
-
+    it("should return success message to refused reaction", done => {
       const spy = jest
+        .spyOn(utils, "convertToMissionData")
+        .mockImplementationOnce(() => refusedData);
+
+      const spyFind = jest
         .spyOn(model, "find")
         .mockImplementationOnce(() => Promise.resolve(missionNotAccepted));
 
@@ -465,8 +509,9 @@ describe("Mission Controller", () => {
         .spyOn(controller, "refuseMission")
         .mockImplementationOnce(() => Promise.resolve(true));
 
-      controller.answer(interaction).then(res => {
+      controller.answer(messageWithAnswerMissionRefused).then(res => {
         expect(spy).toHaveBeenCalled();
+        expect(spyFind).toHaveBeenCalled();
         expect(spyLimit).toHaveBeenCalled();
         expect(spyLimitDate).toHaveBeenCalled();
         expect(spyAccepted).toHaveBeenCalled();
