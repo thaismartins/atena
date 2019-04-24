@@ -2,6 +2,7 @@ quiz:
   limit:
     date: 8
     simultaneously: 2
+    daily: 2
   xp:
     owner: 5
     atena: 10

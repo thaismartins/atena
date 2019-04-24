@@ -31,8 +31,6 @@ const commands = async message => {
     missao: /!missao/g
   };
 
-  console.log("message.msg", message.msg);
-
   if (regex.ranking.test(message.msg)) {
     await rankingController.commandIndex(message);
   } else if (regex.meusPontos.test(message.msg)) {
@@ -52,6 +50,7 @@ const processMessages = async (err, message, messageOptions) => {
   if (!err) {
     message.origin = "rocket";
     console.log("MESSAGE: ", message, messageOptions);
+    await missionController.answer(message);
     if (message.u._id === myuserid || message.t) return;
     interactionController.save(message).catch(() => {
       console.log(
