@@ -5,6 +5,8 @@ import MissionModel from "../models/mission";
 import rocket from "../rocket/api";
 import userController from "../controllers/user";
 
+const ROCKET_BOT_USER = process.env.ROCKET_BOT_USER || "atena";
+
 export const sendedToAnotherUser = (message, user) => {
   const sendedUser = getSenderUsername(message);
   return message.includes("@") && sendedUser !== user;
@@ -28,19 +30,11 @@ export const generateLimitDate = () => {
 };
 
 export const isAcceptedAnswer = data => {
-  return (
-    data.description &&
-    (data.description.includes(":+1:") ||
-      data.description.includes(":thumbsup:"))
-  );
+  return data.reaction && data.reaction === "accepted";
 };
 
 export const isRefusedAnswer = data => {
-  return (
-    data.description &&
-    (data.description.includes(":-1:") ||
-      data.description.includes(":thumbsdown:"))
-  );
+  return data.reaction && data.reaction === "refused";
 };
 
 export const isInLimitDate = date => {
@@ -63,23 +57,26 @@ export const isInDailyLimit = async user => {
 
 export const userAbleToReceiveNewMission = async user => {
   let missions = await MissionModel.find({
-    $or: [
-      {
-        user: user,
-        accepted: true,
-        acceptedDate: { $exists: true, $not: { $type: 10 } },
-        completed: false
-      },
-      {
-        user: user,
-        accepted: false,
-        completed: false,
-        refuseDate: { $exists: false }
-      }
-    ]
+    user: user,
+    completed: false,
+    refuseDate: { $exists: false }
   });
 
   return missions.length < config.missions.quiz.limit.simultaneously;
+};
+
+export const userAbleToCompletedMission = async user => {
+  const start = moment().startOf("day");
+  const end = moment(start).endOf("day");
+
+  const missionsCompletedToday = await MissionModel.find({
+    user: user,
+    accepted: true,
+    completedDate: { $gte: start, $lte: end },
+    completed: true
+  });
+
+  return missionsCompletedToday.length < config.missions.quiz.limit.daily;
 };
 
 export const getReceiverByUsername = async username => {
@@ -96,7 +93,7 @@ export const getReceiverByUsername = async username => {
   return false;
 };
 
-export const generateMessage = missionId => {
+export const generateMessage = (missionId, user) => {
   let optionsText = "";
   let reactions = {};
 
@@ -114,13 +111,47 @@ export const generateMessage = missionId => {
   options.forEach(option => {
     optionsText += ` ${option.value} ${option.label} \n\n`;
     reactions[`${option.value}`] = {
-      usernames: [process.ENV.ROCKET_BOT_USER]
+      usernames: [ROCKET_BOT_USER]
     };
   });
 
+  const sender = user ? ` de @${user}` : "";
   return {
-    msg: `*Nobre guerreiro(a), você acabou de receber uma nova missão!* \n\n ${optionsText} \n **Responda clicando em uma das opções a seguir:**`,
+    msg: `*Nobre guerreiro(a), você acabou de receber uma nova missão${sender}!* \n\n ${optionsText} \n **Responda clicando em uma das opções a seguir:**`,
     researchHash: missionId, // TODO: encrypt
     reactions
   };
+};
+
+export const convertToMissionData = message => {
+  if (!isMissionAnswer(message)) {
+    return;
+  }
+
+  let data = {
+    researchHash: message.researchHash,
+    reaction: null
+  };
+
+  let positive = message.reactions[":+1:"].usernames;
+  let negative = message.reactions[":-1:"].usernames;
+
+  positive = positive.filter(user => user !== ROCKET_BOT_USER);
+  negative = negative.filter(user => user !== ROCKET_BOT_USER);
+
+  if (positive.length) {
+    data.reaction = "accepted";
+  } else if (negative.length) {
+    data.reaction = "refused";
+  }
+
+  return data;
+};
+
+export const isMissionAnswer = message => {
+  return (
+    message.u.username === ROCKET_BOT_USER &&
+    Object.keys(message.reactions).length &&
+    message.researchHash
+  );
 };
