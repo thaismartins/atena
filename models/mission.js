@@ -44,6 +44,9 @@ const missonSchema = new mongoose.Schema({
   },
   refusedDate: {
     type: Date
+  },
+  completedDate: {
+    type: Date
   }
 });
 

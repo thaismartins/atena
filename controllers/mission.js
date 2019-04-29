@@ -1,7 +1,10 @@
 import moment from "moment-timezone";
+import config from "config-yml";
 
 import userController from "./user";
+import interactionController from "./interaction";
 import MissionModel from "../models/mission";
+import InteractionModel from "../models/interaction";
 import {
   sendedToAnotherUser,
   generateLimitDate,
@@ -185,12 +188,46 @@ const refuseMission = async mission => {
   return await mission.save();
 };
 
+const completeMission = async mission => {
+  mission.completed = true;
+  mission.completedDate = Date.now();
+  await mission.save();
+
+  const user = await userController.findBy({ _id: mission.user });
+  const score = mission.user.equals(mission.createdBy)
+    ? config.missions.quiz.xp.owner
+    : config.missions.quiz.xp.atena;
+  await userController.updateScore(user, score);
+
+  const interactionData = interactionController.normalize({
+    type: "manual",
+    user: user.rocketId,
+    rocketUsername: user.username,
+    score: score,
+    value: mission._id,
+    text: "Missão Finalizada"
+  });
+
+  const interaction = new InteractionModel(interactionData);
+  await interaction.save();
+};
+
 const findInactivities = async () => {
   const end = moment().format("YYYY-MM-DD");
   const missions = await MissionModel.find({
     accepted: false,
     refusedDate: { $exists: false },
     limitDate: { $lte: end }
+  }).exec();
+  return missions;
+};
+
+const findIncompletes = async () => {
+  const missions = await MissionModel.find({
+    accepted: true,
+    completed: false,
+    completedDate: { $exists: false },
+    refusedDate: { $exists: false }
   }).exec();
   return missions;
 };
@@ -202,7 +239,9 @@ const defaultFunctions = {
   createToSameUser,
   acceptMission,
   refuseMission,
+  completeMission,
   findInactivities,
+  findIncompletes,
   answer,
   save
 };
