@@ -2,7 +2,7 @@ import config from "config-yml";
 import moment from "moment-timezone";
 import {
   sendedToAnotherUser,
-  getSenderUsername,
+  getRocketSender,
   generateLimitDate,
   isAcceptedAnswer,
   isInLimitDate,
@@ -13,7 +13,10 @@ import {
 } from "./missions";
 import { missionNotAccepted } from "../mocks/missions";
 import model from "../models/mission";
-import { messageWithAnswerMissionRefused } from "../mocks/rocket";
+import {
+  messageWithAnswerMissionRefused,
+  messageWithAnswerMissionAccepted
+} from "../mocks/rocket";
 
 let today;
 
@@ -22,67 +25,141 @@ describe.only("Missions Util", () => {
 
   describe("sendedToAnotherUser", () => {
     it("should return false to message without user", done => {
-      const hasAnotherUser = sendedToAnotherUser("!missao", "john-doe");
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao";
+      message.mentions = [];
+      const hasAnotherUser = sendedToAnotherUser(message);
       expect(hasAnotherUser).toBeFalsy();
       done();
     });
 
     it("should return false to message with his own user", done => {
-      const hasAnotherUser = sendedToAnotherUser(
-        "!missao @john-doe",
-        "john-doe"
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
       );
+      message.u = message.mentions[0];
+      const hasAnotherUser = sendedToAnotherUser(message);
       expect(hasAnotherUser).toBeFalsy();
       done();
     });
 
-    it("should return false to message with another user", done => {
-      const hasAnotherUser = sendedToAnotherUser("!missao @mary", "john-doe");
+    it("should return true to message with another user", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      const hasAnotherUser = sendedToAnotherUser(message);
+      expect(hasAnotherUser).toBeTruthy();
+      done();
+    });
+
+    it("should return true to message with more than one user", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao @john-doe @mary";
+      message.mentions[1] = JSON.parse(JSON.stringify(message.mentions[0]));
+      message.mentions[1].name = "Mary";
+      message.mentions[1].username = "mary";
+      const hasAnotherUser = sendedToAnotherUser(message);
       expect(hasAnotherUser).toBeTruthy();
       done();
     });
   });
 
-  describe("getSenderUsername", () => {
-    it("should return username 'john-doe'", done => {
-      const username = getSenderUsername("!missao @john-doe");
-      expect(username).toBe("john-doe");
-      done();
-    });
-
-    it("should return username 'john-doe'", done => {
-      const username = getSenderUsername("!missao @john-doe ");
-      expect(username).toBe("john-doe");
-      done();
-    });
-
-    it("should return username 'mary'", done => {
-      const username = getSenderUsername("!missao @mary");
-      expect(username).toBe("mary");
-      done();
-    });
-
-    it("should return username 'mary'", done => {
-      const username = getSenderUsername("!missao @mary ");
-      expect(username).toBe("mary");
+  describe("getRocketSender", () => {
+    it("should return false to message without user", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao";
+      const user = getRocketSender(message);
+      expect(user).toBeFalsy();
       done();
     });
 
     it("should return false to message without username", done => {
-      const username = getSenderUsername("!missao");
-      expect(username).toBeFalsy();
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao @";
+      const user = getRocketSender(message);
+      expect(user).toBeFalsy();
       done();
     });
 
-    it("should return false to message without username", done => {
-      const username = getSenderUsername("!missao ");
-      expect(username).toBeFalsy();
+    it("should return false to message without user and no mentions", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao";
+      message.mentions = [];
+      const user = getRocketSender(message);
+      expect(user).toBeFalsy();
       done();
     });
 
-    it("should return false to message without username", done => {
-      const username = getSenderUsername("!missao @");
-      expect(username).toBeFalsy();
+    it("should return false to message with different user for mentions", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao @mary";
+      const user = getRocketSender(message);
+      expect(user).toBeFalsy();
+      done();
+    });
+
+    it("should return false to message with his own user", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.u = message.mentions[0];
+      const hasAnotherUser = getRocketSender(message, "john-doe");
+      expect(hasAnotherUser).toBeFalsy();
+      done();
+    });
+
+    it("should return user with username 'john-doe'", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      const user = getRocketSender(message);
+      expect(user).toHaveProperty("_id");
+      expect(user).toHaveProperty("name");
+      expect(user).toHaveProperty("username");
+      expect(user.username).toBe("john-doe");
+      done();
+    });
+
+    it("should return user with username 'mary'", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao @mary";
+      message.mentions[0].name = "Mary";
+      message.mentions[0].username = "mary";
+      const user = getRocketSender(message);
+      expect(user).toHaveProperty("_id");
+      expect(user).toHaveProperty("name");
+      expect(user).toHaveProperty("username");
+      expect(user.username).toBe("mary");
+      done();
+    });
+
+    it("should return first user to message with more than one user", done => {
+      const message = JSON.parse(
+        JSON.stringify(messageWithAnswerMissionAccepted)
+      );
+      message.msg = "!missao @john-doe @mary";
+      message.mentions[1] = JSON.parse(JSON.stringify(message.mentions[0]));
+      message.mentions[1].name = "Mary";
+      message.mentions[1].username = "mary";
+      const user = getRocketSender(message);
+      expect(user).toHaveProperty("_id");
+      expect(user).toHaveProperty("name");
+      expect(user).toHaveProperty("username");
+      expect(user.username).toBe("john-doe");
       done();
     });
   });
@@ -173,7 +250,6 @@ describe.only("Missions Util", () => {
         JSON.stringify(messageWithAnswerMissionRefused)
       );
       message.researchHash = null;
-      console.log("message", message);
       const data = convertToMissionData(message);
       expect(data).toBeFalsy();
       done();

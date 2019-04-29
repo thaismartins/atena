@@ -173,11 +173,13 @@ describe("Mission Controller", () => {
   describe("createToAnotherUser", () => {
     it("should return a error message", done => {
       const spy = jest
-        .spyOn(utils, "getSenderUsername")
-        .mockImplementationOnce(() => "mary");
+        .spyOn(utils, "getRocketSender")
+        .mockImplementationOnce(
+          () => messageWithAnswerMissionAccepted.mentions[0]
+        );
 
       const spyReceiver = jest
-        .spyOn(utils, "getReceiverByUsername")
+        .spyOn(userController, "findByOrigin")
         .mockImplementationOnce(() => Promise.resolve(user));
 
       const spyAbled = jest
@@ -214,11 +216,12 @@ describe("Mission Controller", () => {
 
     it("should return a success message", done => {
       const spy = jest
-        .spyOn(utils, "getSenderUsername")
-        .mockImplementationOnce(() => "mary");
-
+        .spyOn(utils, "getRocketSender")
+        .mockImplementationOnce(
+          () => messageWithAnswerMissionAccepted.mentions[0]
+        );
       const spyReceiver = jest
-        .spyOn(utils, "getReceiverByUsername")
+        .spyOn(userController, "findByOrigin")
         .mockImplementationOnce(() => Promise.resolve(user));
 
       const spyAbled = jest
@@ -247,7 +250,7 @@ describe("Mission Controller", () => {
           expect(spySendMessage).toHaveBeenCalled();
           expect(spySave).toHaveBeenCalled();
           expect(res).toEqual(
-            "Uhuul! Uma nova missão foi enviada para @mary! :muscle:"
+            "Uhuul! Uma nova missão foi enviada para @john-doe! :muscle:"
           );
           done();
         });

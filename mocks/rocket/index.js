@@ -142,7 +142,7 @@ export const messageWithMission = {
 export const messageWithMissionToAnotherUser = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
-  msg: "!missao @mary",
+  msg: "!missao @john-doe",
   ts: { $date: 1551699287633 },
   u: {
     _id: "ueofoughzADn6uA3T",
@@ -150,7 +150,13 @@ export const messageWithMissionToAnotherUser = {
     name: "Ikki de Fênix"
   },
   _updatedAt: { $date: 1551699287653 },
-  mentions: [],
+  mentions: [
+    {
+      _id: "ueofoughzADn6uA3T",
+      username: "john-doe",
+      name: "John Doe"
+    }
+  ],
   channels: [],
   origin: "rocket"
 };
@@ -158,7 +164,7 @@ export const messageWithMissionToAnotherUser = {
 export const messageWithAnswerMissionAccepted = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
-  msg: "!missao",
+  msg: "!missao @john-doe",
   ts: { $date: 1551699287633 },
   u: {
     _id: "ueofoughzADn6uA3T",
@@ -166,7 +172,13 @@ export const messageWithAnswerMissionAccepted = {
     name: "Ikki de Fênix"
   },
   _updatedAt: { $date: 1551699287653 },
-  mentions: [],
+  mentions: [
+    {
+      _id: "ueofoughzADn6uA3T",
+      username: "john-doe",
+      name: "John Doe"
+    }
+  ],
   channels: [],
   origin: "rocket",
   reactions: {
@@ -179,7 +191,7 @@ export const messageWithAnswerMissionAccepted = {
 export const messageWithAnswerMissionRefused = {
   _id: "9iu48nfao3xPWLrkp",
   rid: "GENERAL",
-  msg: "!missao",
+  msg: "!missao @john-doe",
   ts: { $date: 1551699287633 },
   u: {
     _id: "ueofoughzADn6uA3T",
@@ -187,7 +199,13 @@ export const messageWithAnswerMissionRefused = {
     name: "Ikki de Fênix"
   },
   _updatedAt: { $date: 1551699287653 },
-  mentions: [],
+  mentions: [
+    {
+      _id: "ueofoughzADn6uA3T",
+      username: "john-doe",
+      name: "John Doe"
+    }
+  ],
   channels: [],
   origin: "rocket",
   reactions: {

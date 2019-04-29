@@ -1,14 +1,15 @@
+import moment from "moment-timezone";
+
 import userController from "./user";
 import MissionModel from "../models/mission";
 import {
   sendedToAnotherUser,
   generateLimitDate,
-  getSenderUsername,
+  getRocketSender,
   isAcceptedAnswer,
   isInLimitDate,
   userAbleToReceiveNewMission,
   isInDailyLimit,
-  getReceiverByUsername,
   generateMessage,
   isRefusedAnswer,
   convertToMissionData
@@ -33,7 +34,7 @@ const create = async data => {
       user: data.u._id
     });
 
-    if (sendedToAnotherUser(data.msg, sender.username)) {
+    if (sendedToAnotherUser(data, sender.username)) {
       response.text = await defaultFunctions.createToAnotherUser(sender, data);
     } else {
       response.text = await defaultFunctions.createToSameUser(sender);
@@ -62,8 +63,13 @@ const createToSameUser = async sender => {
 
 const createToAnotherUser = async (sender, data) => {
   let response = "Ops! Não podemos gerar uma nova missão. :(";
-  const username = getSenderUsername(data.msg);
-  const receiver = await getReceiverByUsername(username);
+  if (!data.mentions.length) return response;
+
+  const rocketUser = getRocketSender(data);
+  const receiver = await userController.findByOrigin({
+    origin: "rocket",
+    user: rocketUser._id
+  });
 
   if (!receiver) {
     response =
@@ -74,8 +80,13 @@ const createToAnotherUser = async (sender, data) => {
   const isAbled = await userAbleToReceiveNewMission(receiver);
   if (isAbled) {
     const mission = await defaultFunctions.save(receiver, sender, {});
-    await sendToUser(generateMessage(mission._id, sender.username), username);
-    response = `Uhuul! Uma nova missão foi enviada para @${username}! :muscle:`;
+    await sendToUser(
+      generateMessage(mission._id, sender.username),
+      rocketUser.username
+    );
+    response = `Uhuul! Uma nova missão foi enviada para @${
+      rocketUser.username
+    }! :muscle:`;
   } else {
     response = "Ops! Este guerreiro(a) não pode receber mais missões. :(";
   }
@@ -174,6 +185,16 @@ const refuseMission = async mission => {
   return await mission.save();
 };
 
+const findInactivities = async () => {
+  const end = moment().format("YYYY-MM-DD");
+  const missions = await MissionModel.find({
+    accepted: false,
+    refusedDate: { $exists: false },
+    limitDate: { $lte: end }
+  }).exec();
+  return missions;
+};
+
 const defaultFunctions = {
   commandIndex,
   create,
@@ -181,6 +202,7 @@ const defaultFunctions = {
   createToSameUser,
   acceptMission,
   refuseMission,
+  findInactivities,
   answer,
   save
 };

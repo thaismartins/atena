@@ -2,23 +2,23 @@ import moment from "moment-timezone";
 import config from "config-yml";
 
 import MissionModel from "../models/mission";
-import rocket from "../rocket/api";
-import userController from "../controllers/user";
-
 const ROCKET_BOT_USER = process.env.ROCKET_BOT_USER || "atena";
 
-export const sendedToAnotherUser = (message, user) => {
-  const sendedUser = getSenderUsername(message);
-  return message.includes("@") && sendedUser !== user;
+export const sendedToAnotherUser = data => {
+  if (!isValidSendedMessage(data)) return false;
+  const sendedUser = getRocketSender(data);
+  return !!sendedUser.username && sendedUser.username != data.u.user;
 };
 
-export const getSenderUsername = message => {
-  return (
-    message
-      .replace(/.*@/, "")
-      .replace("!missao", "")
-      .trim() || false
-  );
+export const getRocketSender = data => {
+  if (!isValidSendedMessage(data)) return false;
+  const sendedUsername = getUsernameByMessage(data.msg);
+  if (
+    data.mentions[0].username == data.u.username ||
+    sendedUsername != data.mentions[0].username
+  )
+    return false;
+  return data.mentions[0];
 };
 
 export const generateLimitDate = () => {
@@ -79,20 +79,6 @@ export const userAbleToCompletedMission = async user => {
   return missionsCompletedToday.length < config.missions.quiz.limit.daily;
 };
 
-export const getReceiverByUsername = async username => {
-  if (username) {
-    const rocketUser = await rocket.getUserInfoByUsername(username);
-    if (rocketUser) {
-      return await userController.findByOrigin({
-        origin: "rocket",
-        user: rocketUser._id
-      });
-    }
-  }
-
-  return false;
-};
-
 export const generateMessage = (missionId, user) => {
   let optionsText = "";
   let reactions = {};
@@ -150,8 +136,27 @@ export const convertToMissionData = message => {
 
 export const isMissionAnswer = message => {
   return (
+    message.reactions &&
+    (message.reactions[":+1:"] || message.reactions[":-1:"]) &&
     message.u.username === ROCKET_BOT_USER &&
     Object.keys(message.reactions).length &&
     message.researchHash
   );
+};
+
+const isValidSendedMessage = data => {
+  return (
+    data.msg.includes("@") &&
+    getUsernameByMessage(data.msg).length > 0 &&
+    data.mentions.length > 0 &&
+    data.u &&
+    data.u.username.length > 0
+  );
+};
+
+const getUsernameByMessage = message => {
+  return message
+    .replace("!missao @", "")
+    .split("@")[0]
+    .trim();
 };
