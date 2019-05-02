@@ -51,6 +51,8 @@ const create = async data => {
 
 const createToSameUser = async sender => {
   let response = "Ops! Não podemos gerar uma nova missão. :(";
+  if (!sender.uuid) return response;
+
   const isAbled = await userAbleToReceiveNewMission(sender);
   if (isAbled) {
     const quiz = await minerController.getNewQuiz();
@@ -79,6 +81,8 @@ const createToAnotherUser = async (sender, data) => {
       "Ops! Não encontramos o usuário que deseja enviar uma missão. :(";
     return response;
   }
+
+  if (!sender.uuid) return response;
 
   const isAbled = await userAbleToReceiveNewMission(receiver);
   if (isAbled) {
