@@ -1,3 +1,4 @@
+import axios from "axios";
 import { isValidToken } from "../utils/teams";
 
 const isMiner = async (req, res) => {
@@ -12,10 +13,12 @@ const isMiner = async (req, res) => {
 };
 
 const getNewQuiz = async user => {
-  // TODO: buscar no miner
-  return {
-    _id: 12345678
-  };
+  if (!user.uuid) return;
+
+  const url = `${process.env.MINER_URL}/questions/next/${user.uuid}`;
+  return await axios.post(url, {
+    accept: "json"
+  });
 };
 
 const exportFunctions = {
