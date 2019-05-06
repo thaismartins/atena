@@ -37,6 +37,8 @@ const create = async data => {
       user: data.u._id
     });
 
+    if (!sender) return response;
+
     if (sendedToAnotherUser(data, sender.username)) {
       response.text = await defaultFunctions.createToAnotherUser(sender, data);
     } else {
