@@ -7,7 +7,12 @@ import {
   calculateReactions,
   getUserInfo
 } from "../utils";
-import { isEligibleToPro } from "../utils/pro";
+import {
+  isEligibleToPro,
+  saveOnLinkedin,
+  saveReferrers,
+  saveOpportunities
+} from "../utils/pro";
 import { sendToUser } from "../rocket/bot";
 import { _throw } from "../helpers";
 import axios from "axios";
@@ -143,7 +148,7 @@ const findByOrigin = async (interaction, isParent = false) => {
 export const findBy = async args => {
   const UserModel = mongoose.model("User");
   const result = await UserModel.findOne(args).exec();
-  return result || _throw("Error finding user");
+  return result || console.log("Error finding user");
 };
 
 const findAll = async (
@@ -427,7 +432,10 @@ export const commandScore = async message => {
 
 export const handleFromNext = async data => {
   try {
-    let user = await findBy({ rocketId: data.rocket_chat.id });
+    let user = await userModel
+      .findOne({ rocketId: data.rocket_chat.id })
+      .exec();
+
     if (!user) {
       const userData = {
         rocketId: data.rocket_chat.id,
@@ -438,72 +446,16 @@ export const handleFromNext = async data => {
 
       user = await save(userData);
     }
-
-    if (!user.linkedin) {
-      await interactionController.manualInteractions({
-        type: "manual",
-        user: data.rocket_chat.id,
-        username: data.rocket_chat.username,
-        text:
-          "você recebeu pontos por dizer no LinkedIn que faz parte da Impulso",
-        value: config.xprules.linkedin
-      });
-    }
-
-    if (data.referrer) {
-      await interactionController.manualInteractions({
-        type: "manual",
-        user: data.rocket_chat.id,
-        username: data.rocket_chat.username,
-        text: "você recebeu pontos por indicar a Impulso",
-        value: config.xprules.referral
-      });
-    }
-
-    if (data.opportunities_feed.length) {
-      let text, value;
-
-      switch (data.opportunities_feed.status) {
-        case "interview":
-          text =
-            "Você recebeu pontos por participar da entrevista de uma oportunidade";
-          value = config.xprules.team.interview;
-          break;
-        case "approved":
-          text = "Você recebeu pontos por ser aprovado para uma oportunidade";
-          value = config.xprules.team.approved;
-          break;
-        case "allocated":
-          text = "Você recebeu pontos por ser alocado em uma oportunidade";
-          value = config.xprules.team.allocated;
-          break;
-        default:
-          text = "Esta é uma interação sem pontos";
-          value = 0;
-          break;
-      }
-
-      await interactionController.manualInteractions({
-        type: "manual",
-        user: data.rocket_chat.id,
-        username: data.rocket_chat.username,
-        text: text,
-        value: value
-      });
-    }
-
     user.rocketId = data.rocket_chat.id;
     user.name = data.fullname;
     user.email = data.network_email;
     user.linkedinId = data.linkedin.uid;
     user.username = data.rocket_chat.username;
     user.uuid = data.uuid;
-
-    if (isEligibleToPro(user)) {
-      user.pro = true;
-    } else if (!isEligibleToPro(user) && user.pro) {
-      user.pro = false;
-    }
+    user.onLinkedin = await saveOnLinkedin(user, data);
+    user.referrers = await saveReferrers(user, data);
+    user.opportunities = await saveOpportunities(user, data);
+    user.pro = await isEligibleToPro(user, data);
 
     return await user.save();
   } catch (err) {

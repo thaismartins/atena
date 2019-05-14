@@ -8,6 +8,18 @@ import { isNewLevel } from "../utils/achievementsLevel";
 import achievementLevelController from "../controllers/achievementLevel";
 import { saveScoreInteraction } from "../utils/achievements";
 
+const referrerSchema = {
+  uuid: {
+    type: String,
+    required: true
+  },
+  phase: {
+    type: String,
+    enum: ["interview", "approved", "allocated"],
+    required: true
+  }
+};
+
 export const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
@@ -105,9 +117,18 @@ export const userSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  onLinkedin: {
+    type: Boolean,
+    required: false,
+    default: false
+  },
   pro: {
     type: Boolean,
     default: false
+  },
+  referrers: {
+    type: [referrerSchema],
+    required: false
   }
 });
 
